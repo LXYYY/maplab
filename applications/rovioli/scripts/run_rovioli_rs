@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Script to run ROVIOLI from a Euroc rosbag data source.
+# Script to run ROVIOLI from a realsense D435i rosbag data source.
 # Usage: tutorial_euroc <output save folder> <rosbag path> [<additional rovioli flags>]
 
 LOCALIZATION_MAP_OUTPUT=$1
 ROSBAG=$2
-NCAMERA_CALIBRATION="$ROVIO_CONFIG_DIR/ncamera-realsenseD435i.yaml"
-IMU_PARAMETERS_MAPLAB="$ROVIO_CONFIG_DIR/maplab-sensors-realsenseD435i.yaml"
-IMU_PARAMETERS_ROVIO="$ROVIO_CONFIG_DIR/rovio-imu-realsenseD435i.yaml"
+NCAMERA_CALIBRATION="$ROVIO_CONFIG_DIR/ncamera-euroc.yaml"
+IMU_PARAMETERS_MAPLAB="$ROVIO_CONFIG_DIR/imu-adis16488.yaml"
+IMU_PARAMETERS_ROVIO="$ROVIO_CONFIG_DIR/imu-sigmas-rovio.yaml"
 REST=$@
 
 rosrun rovioli rovioli \
@@ -20,3 +20,4 @@ rosrun rovioli rovioli \
   --optimize_map_to_localization_map=false \
   --map_builder_save_image_as_resources=false \
   --datasource_rosbag=$ROSBAG $REST
+
