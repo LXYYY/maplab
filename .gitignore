@@ -57,3 +57,7 @@ CMakeLists.txt.user
 docs/build
 docs/doxyoutput
 docs/api
+
+.ccls-cache
+.vscode
+compile_commands.json
