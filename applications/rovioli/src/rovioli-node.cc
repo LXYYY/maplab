@@ -1,11 +1,10 @@
 #include "rovioli/rovioli-node.h"
 
-#include <string>
-
 #include <aslam/cameras/ncamera.h>
 #include <localization-summary-map/localization-summary-map.h>
 #include <message-flow/message-flow.h>
 #include <message-flow/message-topic-registration.h>
+#include <string>
 #include <vi-map/sensor-utils.h>
 #include <vio-common/vio-types.h>
 
@@ -19,6 +18,11 @@ DEFINE_bool(
     rovioli_run_map_builder, true,
     "When set to false, the map builder will be deactivated and no map will be "
     "built. Rovio+Localization will still run as usual.");
+
+DEFINE_bool(
+    rovioli_run_map_online_publisher, false,
+    "When set to true, a keyframe-based map will be built and published online "
+    "for multi agent applications");
 
 namespace rovioli {
 RovioliNode::RovioliNode(

@@ -1,13 +1,11 @@
 #ifndef ROVIOLI_ROVIOLI_NODE_H_
 #define ROVIOLI_ROVIOLI_NODE_H_
-#include <memory>
-
 #include <atomic>
-#include <string>
-
+#include <memory>
 #include <message-flow/message-flow.h>
 #include <sensors/imu.h>
 #include <sensors/wheel-odometry-sensor.h>
+#include <string>
 
 #include "rovioli/data-publisher-flow.h"
 #include "rovioli/datasource-flow.h"
@@ -15,6 +13,7 @@
 #include "rovioli/imu-camera-synchronizer-flow.h"
 #include "rovioli/localizer-flow.h"
 #include "rovioli/map-builder-flow.h"
+#include "rovioli/online-map-publisher-flow.h"
 #include "rovioli/rovio-flow.h"
 
 namespace rovioli {
@@ -46,9 +45,10 @@ class RovioliNode final {
   std::unique_ptr<FeatureTrackingFlow> tracker_flow_;
   std::unique_ptr<MapBuilderFlow> map_builder_flow_;
   std::unique_ptr<DataPublisherFlow> data_publisher_flow_;
+  std::unique_ptr<OnlineMapPublisherFlow> map_publisher_flow_;
 
-  // Set to true once the data-source has played back all its data. Will never
-  // be true for infinite data-sources (live-data).
+  // Set to true once the data-source has played back all its data. Will
+  // never be true for infinite data-sources (live-data).
   std::atomic<bool> is_datasource_exhausted_;
 };
 }  // namespace rovioli
