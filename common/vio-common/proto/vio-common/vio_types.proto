@@ -2,6 +2,11 @@ package vio.proto;
 
 import "aslam-serialization/visual-frame.proto";
 
+message SynchronizedNFrame {
+  optional aslam.proto.VisualNFrame nframe = 1;
+  optional int32 motion_wrt_last_nframe = 2;  // enum MotionType
+}
+
 message SynchronizedNFrameImu {
   repeated int64 imu_timestamps = 1;
   repeated double imu_measurements = 2;
