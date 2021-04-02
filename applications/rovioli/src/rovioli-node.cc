@@ -92,6 +92,13 @@ RovioliNode::RovioliNode(
     map_builder_flow_->attachToMessageFlow(flow);
   }
 
+  if (FLAGS_rovioli_run_map_online_publisher) {
+    CHECK(FLAGS_rovioli_run_map_builder)
+        << "Cannot start map publisher without a map builder running";
+    map_publisher_flow_.reset(new OnlineMapPublisherFlow());
+    map_publisher_flow_->attachToMessageFlow(flow);
+  }
+
   // Subscribe to end of days signal from the datasource.
   datasource_flow_->registerEndOfDataCallback(
       [&]() { is_datasource_exhausted_.store(true); });

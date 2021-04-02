@@ -11,6 +11,7 @@ void OnlineMapPublisherFlow::attachToMessageFlow(
       kSubscriberNodeName, message_flow::DeliveryOptions(),
       [this](const vio::MapUpdate::ConstPtr& vio_update) {
         CHECK(vio_update != nullptr);
+        this->map_publisher_.apply(vio_update);
       });
 }
 }  // namespace rovioli

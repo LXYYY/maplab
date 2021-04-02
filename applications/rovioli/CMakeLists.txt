@@ -25,6 +25,7 @@ cs_add_library(${PROJECT_NAME}_lib
   src/rovio-localization-handler.cc
   src/rovioli-node.cc
   src/vio-update-builder.cc
+  src/online-map-publisher-flow.cc
 )
 
 #######
