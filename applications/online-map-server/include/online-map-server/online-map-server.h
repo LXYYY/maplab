@@ -10,6 +10,7 @@
 #include <std_msgs/String.h>
 #include <string>
 #include <vector>
+#include <vi-map/sensor-utils.h>
 #include <vio-common/vio-update-serialization.h>
 
 namespace online_map_server {
@@ -41,6 +42,8 @@ class OnlineMapServer {
     auto const& first_mission_id = keyframed_map_builder_[0]->getMissionId();
     map_anchoring::setMissionBaseframeKnownState(
         first_mission_id, true, map_.get());
+
+    ncamera_ = vi_map::getSelectedNCamera(sensor_manager);
   }
 
   virtual ~OnlineMapServer() = default;
@@ -51,7 +54,8 @@ class OnlineMapServer {
     vio::proto::VioUpdate vio_update_proto;
     vio_update_proto.ParseFromString(vio_update_msg->data);
     vio::VioUpdate vio_update;
-    vio::serialization::deserializeVioUpdate(vio_update_proto, &vio_update);
+    vio::serialization::deserializeVioUpdate(
+        vio_update_proto, ncamera_, &vio_update);
     {
       std::lock_guard<std::mutex> lock(map_mutex_);
       keyframed_map_builder_[cid]->applyUpdateAndKeyframe(
@@ -75,6 +79,8 @@ class OnlineMapServer {
   std::vector<std::shared_ptr<online_map_builders::KeyframedMapBuilder>>
       keyframed_map_builder_;
   std::vector<vi_map::MissionId> mission_ids_;
+
+  aslam::NCamera::Ptr ncamera_;
 
   vi_map::VIMap::Ptr map_;
 
