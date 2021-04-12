@@ -1,11 +1,7 @@
 #include "loop-closure-handler/loop-detector-node.h"
 
-#include <algorithm>
-#include <mutex>
-#include <sstream>  // NOLINT
-#include <string>
-
 #include <Eigen/Geometry>
+#include <algorithm>
 #include <aslam/common/statistics/statistics.h>
 #include <descriptor-projection/descriptor-projection.h>
 #include <descriptor-projection/flags.h>
@@ -23,6 +19,9 @@
 #include <matching-based-loopclosure/loop-detector-interface.h>
 #include <matching-based-loopclosure/matching-based-engine.h>
 #include <matching-based-loopclosure/scoring.h>
+#include <mutex>
+#include <sstream>  // NOLINT
+#include <string>
 #include <vi-map/landmark-quality-metrics.h>
 
 #include "loop-closure-handler/loop-closure-handler.h"

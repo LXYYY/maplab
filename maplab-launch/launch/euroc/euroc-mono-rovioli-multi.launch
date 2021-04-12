@@ -29,47 +29,37 @@
                 </node>
         </group>
 
-        <group ns="rovioli_1">
+                 <group ns="rovioli_1">
                 <node name="rovioli" pkg="rovioli" type="rovioli" output="screen" clear_params="true">
 
-                        <!-- GENERAL PARAMS -->
-                        <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-rovioli-rosparam.yaml" />
+        <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-rovioli-rosparam.yaml" />
 
-                        <!-- ROBOT SPECIFIC PARAMS -->
-                        <!-- SENSORS -->
-                        <param name="sensor_calibration_file" value="$(find maplab_launch)/config/euroc-multi/calib/euroc-mono1.yaml" />
-                        <param name="imu_to_camera_time_offset_ns" value="0" />
-                        <param name="vio_camera_topic_suffix" value="image_raw" />
+        <param name="sensor_calibration_file" value="$(find maplab_launch)/config/euroc-multi/calib/euroc-mono1.yaml" />
+        <param name="imu_to_camera_time_offset_ns" value="0" />
+        <param name="vio_camera_topic_suffix" value="image_raw" />
 
-                        <!-- ROVIOLI CONFIG -->
-                        <param name="rovioli_run_map_builder" value="true" />
-                        <param name="rovio_enable_frame_visualization" value="false" />
-                        <param name="rovioli_enable_health_checking" value="true" />
+        <param name="rovioli_run_map_builder" value="true" />
+        <param name="rovio_enable_frame_visualization" value="false" />
+        <param name="rovioli_enable_health_checking" value="true" />
 
-                        <param name="rovioli_run_map_online_publisher" value="true" />
+        <param name="rovioli_run_map_online_publisher" value="true" />
 
-                        <remap from="/rovioli/maplab_odom_T_M_I" to="/odometry/maplab_odom_T_M_I" />
-                </node>
+        <remap from="/rovioli/maplab_odom_T_M_I" to="/odometry/maplab_odom_T_M_I" />
+        </node>
         </group>
 
-        <!-- MAPLAB -->
         <node name="online_map_server" pkg="online_map_server" type="online_map_server" output="screen" clear_params="true">
                 <remap from="~vio_update_0" to="/rovioli_0/vio_update" />
                 <remap from="~vio_update_1" to="/rovioli_1/vio_update" />
 
-                <!-- GENERAL PARAMS -->
                 <rosparam command="load" file="$(find maplab_launch)/config/euroc/ros/euroc-maplab-node-rosparam.yaml" />
 
-                <!-- ROBOT SPECIFIC PARAMS -->
-                <!-- SENSORS -->
                 <param name="sensor_calibration_file" value="$(find maplab_launch)/config/euroc/calib/euroc-mono.yaml" />
                 <param name="imu_to_camera_time_offset_ns" value="0" />
                 <param name="vio_camera_topic_suffix" value="image_raw" />
 
-                <!-- MAPLAB_NODE_CONFIG -->
                 <param name="map_save_every_n_sec" value="0" />
 
-                <!-- keyframing options-->
                 <param name="kf_distance_threshold_m" value="0.1" />
                 <param name="kf_rotation_threshold_deg" value="5" />
                 <param name="kf_every_nth_vertex" value="3" />
@@ -77,6 +67,6 @@
                 <param name="client_number" value="2" />
         </node>
 
-        <node name="player_0" pkg="rosbag" type="play" output="screen" args="$(arg bag_file0) -q" />
-        <node name="player_1" pkg="rosbag" type="play" output="screen" args="$(arg bag_file1) -q /cam0/image_raw:=/cam1/image_raw /imu0:=/imu1" />
+        <node name="player_0" pkg="rosbag" type="play" output="screen" args="$(arg bag_file0) -q /cam0/image_raw:=/cam0_0/image_raw /imu0:=/imu0_0" />
+        <node name="player_1" pkg="rosbag" type="play" output="screen" args="$(arg bag_file1) -q /cam0/image_raw:=/cam0_1/image_raw /imu0:=/imu0_1" />
 </launch>

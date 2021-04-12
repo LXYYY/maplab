@@ -1,6 +1,6 @@
 sensors:
   - id: c63aecb41bfdfd6b7e1fac37c7cbe7bf
-    topic: /imu0
+    topic: /imu0_0
     description: "VI-Sensor IMU (ADIS16448)"
     sensor_type: IMU
     sigmas:
@@ -28,7 +28,7 @@ sensors:
         - [0,0,0,0,0,0.01]
     cameras:
       - camera:
-          topic: /cam0
+          topic: /cam0_0
           description: "VI-Sensor cam0 (MT9M034)"
           id: 54812562fa109c40fe90b29a59dd7798
           sensor_type: CAMERA
