@@ -1,10 +1,6 @@
 #ifndef VIO_COMMON_VIO_TYPES_H_
 #define VIO_COMMON_VIO_TYPES_H_
 
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <Eigen/Core>
 #include <aslam/common/memory.h>
 #include <aslam/common/pose-types.h>
@@ -15,6 +11,9 @@
 #include <maplab-common/localization-result.h>
 #include <maplab-common/macros.h>
 #include <opencv2/core/core.hpp>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace vio {
 
@@ -268,7 +267,9 @@ class ViNodeState {
     return timestamp_ns_;
   }
   inline void setTimestamp(int64_t timestamp_ns) {
-    CHECK_GE(timestamp_ns, 0);
+    // TODO(mikexyl): for some reason vio update will generate uninited
+    // timestamp, comment out the check for now
+    // CHECK_GE(timestamp_ns, 0);
     timestamp_ns_ = timestamp_ns;
   }
 

@@ -24,6 +24,9 @@ class KeyframedMapPublisher {
   ~KeyframedMapPublisher() = default;
 
   void apply(const vio::MapUpdate::ConstPtr& map_update) {
+    // TODO(mikexyl): for some reason, map_update's timestamp is not
+    // initialized, investigate
+
     // deep copy frame to release images meanwhile not affect other modules.
     std::shared_ptr<aslam::VisualNFrame> nframe_to_pub;
     const aslam::VisualNFrame& nframe_original = *map_update->keyframe->nframe;

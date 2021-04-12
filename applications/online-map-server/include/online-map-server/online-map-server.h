@@ -53,6 +53,7 @@ class OnlineMapServer {
     CHECK_NOTNULL(keyframed_map_builder_[cid]);
     vio::proto::VioUpdate vio_update_proto;
     vio_update_proto.ParseFromString(vio_update_msg->data);
+    LOG(INFO) << vio_update_proto.vinode().timestamp_ns();
     vio::VioUpdate vio_update;
     vio::serialization::deserializeVioUpdate(
         vio_update_proto, ncamera_, &vio_update);
