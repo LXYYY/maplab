@@ -6,26 +6,26 @@
         <node pkg="rviz" type="rviz" name="maplab_rviz" args="-d $(find maplab_node)/share/maplab.rviz -f map" />
 
         <!-- ROVIOLI -->
-        <!--       <group ns="rovioli_0">
+        <group ns="rovioli_1">
                 <node name="rovioli" pkg="rovioli" type="rovioli" output="screen" clear_params="true">
 
-        <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-rovioli-rosparam.yaml" />
+                        <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-rovioli-rosparam.yaml" />
 
-        <param name="sensor_calibration_file" value="$(find maplab_launch)/config/euroc-multi/calib/euroc-mono0.yaml" />
-        <param name="imu_to_camera_time_offset_ns" value="0" />
-        <param name="vio_camera_topic_suffix" value="image_raw" />
+                        <param name="sensor_calibration_file" value="$(find maplab_launch)/config/euroc-multi/calib/euroc-mono0.yaml" />
+                        <param name="imu_to_camera_time_offset_ns" value="0" />
+                        <param name="vio_camera_topic_suffix" value="image_raw" />
 
-        <param name="rovioli_run_map_builder" value="true" />
-        <param name="rovio_enable_frame_visualization" value="false" />
-        <param name="rovioli_enable_health_checking" value="true" />
+                        <param name="rovioli_run_map_builder" value="true" />
+                        <param name="rovio_enable_frame_visualization" value="false" />
+                        <param name="rovioli_enable_health_checking" value="true" />
 
-        <param name="rovioli_run_map_online_publisher" value="true" />
+                        <param name="rovioli_run_map_online_publisher" value="true" />
 
-        <remap from="/rovioli/maplab_odom_T_M_I" to="/odometry/maplab_odom_T_M_I" />
-        </node>
+                        <remap from="/rovioli/maplab_odom_T_M_I" to="/odometry/maplab_odom_T_M_I" />
+                </node>
         </group>
-        -->
 
+        <!--
         <group ns="rovioli_1">
                 <node name="rovioli" pkg="rovioli" type="rovioli" output="screen" clear_params="true">
 
@@ -44,6 +44,7 @@
                         <remap from="/rovioli/maplab_odom_T_M_I" to="/odometry/maplab_odom_T_M_I" />
                 </node>
         </group>
+ -->
 
         <node name="online_map_server" pkg="online_map_server" type="online_map_server" output="screen" clear_params="true">
                 <remap from="~vio_update_0" to="/rovioli_0/vio_update" />

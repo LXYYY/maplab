@@ -1,3 +1,4 @@
+#include <chrono>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <maplab-ros-common/gflags-interface.h>
@@ -44,6 +45,12 @@ int main(int argc, char** argv) {
   online_map_server::OnlineMapServer online_map_server(
       nh_private, keyframing_options, sensor_manager, FLAGS_save_map_folder);
 
-  ros::spin();
+  ros::AsyncSpinner ros_spinner(common::getNumHardwareThreads());
+  ros_spinner.start();
+
+  while (ros::ok()) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
+
   return 0;
 }

@@ -6,11 +6,13 @@
 #include <memory>
 #include <mutex>
 #include <online-map-builders/keyframed-map-builder.h>
+#include <online-map-builders/stream-map-builder.h>
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <string>
 #include <vector>
 #include <vi-map/sensor-utils.h>
+#include <vio-common/map-update.h>
 #include <vio-common/vio-update-serialization.h>
 
 namespace online_map_server {
@@ -28,8 +30,8 @@ class OnlineMapServer {
 
     for (int i = 0; i < client_number; i++) {
       keyframed_map_builder_.emplace_back(
-          new online_map_builders::KeyframedMapBuilder(
-              keyframing_options, sensor_manager, map_.get()));
+          new online_map_builders::StreamMapBuilder(
+              sensor_manager, map_.get()));
       vio_update_subscriber_.emplace_back(
           node_handle_.subscribe<std_msgs::String>(
               "vio_update_" + std::to_string(i), 10,
@@ -59,8 +61,8 @@ class OnlineMapServer {
         vio_update_proto, ncamera_, &vio_update);
     {
       std::lock_guard<std::mutex> lock(map_mutex_);
-      keyframed_map_builder_[cid]->applyUpdateAndKeyframe(
-          std::make_shared<const vio::VioUpdate>(vio_update));
+      keyframed_map_builder_[cid]->apply(
+          vio::MapUpdate::fromVioUpdate(vio_update));
 
       processMap(cid);
     }
@@ -77,7 +79,7 @@ class OnlineMapServer {
 
   std::vector<ros::Subscriber> vio_update_subscriber_;
 
-  std::vector<std::shared_ptr<online_map_builders::KeyframedMapBuilder>>
+  std::vector<std::shared_ptr<online_map_builders::StreamMapBuilder>>
       keyframed_map_builder_;
   std::vector<vi_map::MissionId> mission_ids_;
 

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vio-common/vio-types.h>
+#include <vio-common/vio-update.h>
 
 namespace vio {
 
@@ -34,6 +35,33 @@ struct MapUpdate {
   // visual keyframe or not if we want to support mapping without vision.
   inline bool check() const {
     return static_cast<bool>(keyframe);
+  }
+
+  static inline MapUpdate fromVioUpdate(const VioUpdate& vio_update) {
+    std::shared_ptr<aslam::VisualNFrame> nframe_to_pub;
+    const aslam::VisualNFrame& nframe_original =
+        *vio_update.keyframe_and_imudata->nframe;
+    nframe_to_pub = aligned_shared<aslam::VisualNFrame>(
+        nframe_original.getId(), nframe_original.getNumCameras());
+    *nframe_to_pub = *vio_update.keyframe_and_imudata->nframe;
+
+    std::shared_ptr<vio::SynchronizedNFrame> keyframe(
+        new vio::SynchronizedNFrame{
+            nframe_to_pub,
+            vio_update.keyframe_and_imudata->motion_wrt_last_nframe});
+    MapUpdate map_update{
+        vio_update.timestamp_ns,
+        vio_update.vio_state,
+        vio_update.vio_update_type,
+        keyframe,
+        vio_update.keyframe_and_imudata->imu_timestamps,
+        vio_update.keyframe_and_imudata->imu_measurements,
+        vio_update.vinode,
+        vio_update.vinode_covariance,
+        vio_update.localization_state,
+        vio_update.T_G_M};
+
+    return map_update;
   }
 };
 
