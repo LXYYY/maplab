@@ -39,6 +39,6 @@
 
 		<!-- MAPLAB_NODE_CONFIG -->
 		<param name="map_save_every_n_sec" value="0"/>
-		<param name="map_output_folder" value="/tmp/euroc/"/>
+                <param name="map_output_folder" value="/home/lxy/Workspace_ssd/maplab_ws/maps/euroc_mh1/"/>
 	</node>
 </launch>

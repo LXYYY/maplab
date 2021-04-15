@@ -6,8 +6,8 @@
         <node pkg="rviz" type="rviz" name="maplab_rviz" args="-d $(find maplab_node)/share/maplab.rviz -f map" />
 
         <!-- ROVIOLI -->
-        <group ns="rovioli_1">
-                <node name="rovioli" pkg="rovioli" type="rovioli" output="screen" clear_params="true">
+        <group ns="rovioli_0">
+                <node name="rovioli" pkg="rovioli" type="rovioli" output="log" clear_params="true">
 
                         <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-rovioli-rosparam.yaml" />
 
@@ -25,9 +25,8 @@
                 </node>
         </group>
 
-        <!--
         <group ns="rovioli_1">
-                <node name="rovioli" pkg="rovioli" type="rovioli" output="screen" clear_params="true">
+                <node name="rovioli" pkg="rovioli" type="rovioli" output="screen" clear_params="true" args="--v 200">
 
                         <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-rovioli-rosparam.yaml" />
 
@@ -44,9 +43,11 @@
                         <remap from="/rovioli/maplab_odom_T_M_I" to="/odometry/maplab_odom_T_M_I" />
                 </node>
         </group>
- -->
 
         <node name="online_map_server" pkg="online_map_server" type="online_map_server" output="screen" clear_params="true">
+
+                <!-- launch-prefix="gdb -ex run -args" -->
+
                 <remap from="~vio_update_0" to="/rovioli_0/vio_update" />
                 <remap from="~vio_update_1" to="/rovioli_1/vio_update" />
 

@@ -36,26 +36,28 @@ class OnlineMapServer {
           node_handle_.subscribe<std_msgs::String>(
               "vio_update_" + std::to_string(i), 10,
               [this, i](const std_msgs::String::ConstPtr& vio_update_msg) {
-                this->VioUpdateCallback(i, vio_update_msg);
+                this->vioUpdateCallback(i, vio_update_msg);
               }));
-      mission_ids_.emplace_back(keyframed_map_builder_[i]->getMissionId());
+      auto const& mission_id = keyframed_map_builder_[i]->getMissionId();
+      mission_ids_.emplace_back(mission_id);
+      map_updated_.emplace_back(false);
     }
 
-    auto const& first_mission_id = keyframed_map_builder_[0]->getMissionId();
     map_anchoring::setMissionBaseframeKnownState(
-        first_mission_id, true, map_.get());
-
+        mission_ids_[0], true, map_.get());
     ncamera_ = vi_map::getSelectedNCamera(sensor_manager);
+
+    anchor_mission_timer_ = node_handle_.createTimer(
+        ros::Duration(1), &OnlineMapServer::anchorMissionEvent, this);
   }
 
   virtual ~OnlineMapServer() = default;
 
-  void VioUpdateCallback(
+  void vioUpdateCallback(
       int cid, const std_msgs::String::ConstPtr& vio_update_msg) {
     CHECK_NOTNULL(keyframed_map_builder_[cid]);
     vio::proto::VioUpdate vio_update_proto;
     vio_update_proto.ParseFromString(vio_update_msg->data);
-    LOG(INFO) << vio_update_proto.vinode().timestamp_ns();
     vio::VioUpdate vio_update;
     vio::serialization::deserializeVioUpdate(
         vio_update_proto, ncamera_, &vio_update);
@@ -64,18 +66,20 @@ class OnlineMapServer {
       keyframed_map_builder_[cid]->apply(
           vio::MapUpdate::fromVioUpdate(vio_update));
 
-      processMap(cid);
+      map_updated_[cid] = true;
     }
   }
 
   void processMap(int cid);
 
  private:
+  void anchorMissionEvent(const ros::TimerEvent& /*event*/);
   void anchorMission(
       const vi_map::MissionId& mission_id,
       const visualization::ViwlsGraphRvizPlotter* plotter);
 
   ros::NodeHandle node_handle_;
+  ros::Timer anchor_mission_timer_;
 
   std::vector<ros::Subscriber> vio_update_subscriber_;
 
@@ -86,7 +90,7 @@ class OnlineMapServer {
   aslam::NCamera::Ptr ncamera_;
 
   vi_map::VIMap::Ptr map_;
-
+  std::vector<bool> map_updated_;
   std::mutex map_mutex_;
 };
 }  // namespace online_map_server

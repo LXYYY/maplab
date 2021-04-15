@@ -56,6 +56,8 @@ class KeyframedMapPublisher {
     vio_update_publisher_.publish(vio_update_msg);
   }
 
+  void publishFrameDescriptors(const vio::MapUpdate::ConstPtr& map_update) {}
+
   void apply(const VIMapWithMutex::ConstPtr& /*map_with_mutex*/) {
     {
       // TODO(mikexyl): not finished
