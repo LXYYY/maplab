@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <map-anchoring/map-anchoring.h>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <online-map-builders/keyframed-map-builder.h>
