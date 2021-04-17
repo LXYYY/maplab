@@ -20,7 +20,8 @@ class OnlineMapServer {
  public:
   OnlineMapServer(
       const ros::NodeHandle& node_handle,
-      const map_sparsification::KeyframingHeuristicsOptions& keyframing_options,
+      const map_sparsification::
+          KeyframingHeuristicsOptions& /*keyframing_options*/,
       const vi_map::SensorManager& sensor_manager,
       const std::string& save_map_folder)
       : node_handle_(node_handle),
@@ -49,6 +50,8 @@ class OnlineMapServer {
 
     anchor_mission_timer_ = node_handle_.createTimer(
         ros::Duration(1), &OnlineMapServer::anchorMissionEvent, this);
+
+    map_manipulation_.reset(new vi_map_helpers::VIMapManipulation(map_.get()));
   }
 
   virtual ~OnlineMapServer() = default;
@@ -65,12 +68,18 @@ class OnlineMapServer {
       std::lock_guard<std::mutex> lock(map_mutex_);
       keyframed_map_builder_[cid]->apply(
           vio::MapUpdate::fromVioUpdate(vio_update));
+      auto const& mission_id = mission_ids_[cid];
+      if (!last_processed_vertex_id_.count(mission_id)) {
+        auto const& root_vertex_id =
+            map_->getMission(mission_id).getRootVertexId();
+        last_processed_vertex_id_.emplace(mission_id, root_vertex_id);
+      }
 
       map_updated_[cid] = true;
     }
   }
 
-  void processMap(int cid);
+  void processMap(const vi_map::MissionId mission_id);
 
  private:
   void anchorMissionEvent(const ros::TimerEvent& /*event*/);
@@ -86,10 +95,12 @@ class OnlineMapServer {
   std::vector<std::shared_ptr<online_map_builders::StreamMapBuilder>>
       keyframed_map_builder_;
   std::vector<vi_map::MissionId> mission_ids_;
+  std::map<vi_map::MissionId, pose_graph::VertexId> last_processed_vertex_id_;
 
   aslam::NCamera::Ptr ncamera_;
 
   vi_map::VIMap::Ptr map_;
+  std::shared_ptr<vi_map_helpers::VIMapManipulation> map_manipulation_;
   std::vector<bool> map_updated_;
   std::mutex map_mutex_;
 };

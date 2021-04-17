@@ -61,3 +61,4 @@ docs/api
 .ccls-cache
 .vscode
 compile_commands.json
+nvim_server.sh

@@ -152,11 +152,9 @@ void LoopDetectorNode::convertFrameToProjectedImageOnlyUsingProvidedLandmarkIds(
   Eigen::Matrix2Xd valid_measurements(2, original_measurements.cols());
   vi_map::LandmarkIdList valid_landmark_ids(original_measurements.cols());
 
-  VLOG(200) << original_descriptors.cols();
   int num_valid_landmarks = 0;
   for (int i = 0; i < original_measurements.cols(); ++i) {
     const bool is_landmark_id_valid = observed_landmark_ids[i].isValid();
-    VLOG(200) << is_landmark_id_valid;
     const bool is_landmark_valid =
         !skip_invalid_landmark_ids || is_landmark_id_valid;
 
@@ -179,9 +177,6 @@ void LoopDetectorNode::convertFrameToProjectedImageOnlyUsingProvidedLandmarkIds(
     const bool is_landmark_in_set_to_add =
         landmarks_to_add.count(observed_landmark_ids[i]) > 0u;
 
-    // VLOG(200) << landmark_well_constrained << " " <<
-    // is_landmark_in_set_to_add
-    //          << " " << is_landmark_valid;
     if (landmark_well_constrained && is_landmark_in_set_to_add &&
         is_landmark_valid) {
       valid_measurements.col(num_valid_landmarks) =
@@ -191,8 +186,6 @@ void LoopDetectorNode::convertFrameToProjectedImageOnlyUsingProvidedLandmarkIds(
       ++num_valid_landmarks;
     }
   }
-
-  VLOG(200) << num_valid_landmarks;
 
   valid_measurements.conservativeResize(Eigen::NoChange, num_valid_landmarks);
   valid_descriptors.conservativeResize(Eigen::NoChange, num_valid_landmarks);
@@ -209,10 +202,8 @@ void LoopDetectorNode::convertFrameToProjectedImageOnlyUsingProvidedLandmarkIds(
   projected_image->landmarks.swap(valid_landmark_ids);
   projected_image->measurements.swap(valid_measurements);
 
-  VLOG(200) << valid_descriptors.cols();
   loop_detector_->ProjectDescriptors(
       valid_descriptors, &projected_image->projected_descriptors);
-  VLOG(200) << projected_image->projected_descriptors.cols();
 }
 
 void LoopDetectorNode::convertLocalizationFrameToProjectedImage(

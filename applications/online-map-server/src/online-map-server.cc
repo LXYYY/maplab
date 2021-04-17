@@ -3,15 +3,25 @@
 #include <landmark-triangulation/landmark-triangulation.h>
 
 namespace online_map_server {
-void OnlineMapServer::processMap(int cid) {
-  anchorMission(mission_ids_[cid], nullptr);
+void OnlineMapServer::processMap(const vi_map::MissionId mission_id) {
+  CHECK(last_processed_vertex_id_.count(mission_id));
+
+  map_manipulation_->initializeLandmarksFromUnusedFeatureTracksOfMission(
+      mission_id, last_processed_vertex_id_[mission_id]);
+  landmark_triangulation::retriangulateLandmarksAlongMissionAfterVertex(
+      mission_id, last_processed_vertex_id_[mission_id], map_.get());
+
+  anchorMission(mission_id, nullptr);
+
+  last_processed_vertex_id_[mission_id] =
+      map_->getLastVertexIdOfMission(mission_id);
 }
 
 void OnlineMapServer::anchorMissionEvent(const ros::TimerEvent& /*event*/) {
-  for (int i = 0; i < map_updated_.size(); i++) {
+  for (size_t i = 0; i < map_updated_.size(); i++) {
     if (!map_updated_[i])
       continue;
-    processMap(i);
+    processMap(mission_ids_[i]);
     map_updated_[i] = false;
   }
 }
@@ -19,8 +29,6 @@ void OnlineMapServer::anchorMissionEvent(const ros::TimerEvent& /*event*/) {
 void OnlineMapServer::anchorMission(
     const vi_map::MissionId& mission_id,
     const visualization::ViwlsGraphRvizPlotter* /*plotter*/) {
-  vi_map::MissionIdList mission_ids{mission_id};
-  landmark_triangulation::retriangulateLandmarks(mission_ids, map_.get());
   if (mission_id != mission_ids_[0]) {
     map_anchoring::anchorMission(mission_id, map_.get());
   }
