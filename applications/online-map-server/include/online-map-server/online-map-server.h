@@ -5,7 +5,9 @@
 #include <map-anchoring/map-anchoring.h>
 #include <map>
 #include <memory>
+#include <minkindr_conversions/kindr_msg.h>
 #include <mutex>
+#include <nav_msgs/Path.h>
 #include <online-map-builders/keyframed-map-builder.h>
 #include <online-map-builders/stream-map-builder.h>
 #include <ros/ros.h>
@@ -52,8 +54,28 @@ class OnlineMapServer {
         mission_ids_[0], true, map_.get());
     ncamera_ = vi_map::getSelectedNCamera(sensor_manager);
 
+    float anchor_mission_every_n_sec = 1.0;
+    node_handle_.param(
+        "anchor_mission_every_n_sec", anchor_mission_every_n_sec,
+        anchor_mission_every_n_sec);
     anchor_mission_timer_ = node_handle_.createTimer(
-        ros::Duration(1), &OnlineMapServer::anchorMissionEvent, this);
+        ros::Duration(anchor_mission_every_n_sec),
+        &OnlineMapServer::anchorMissionEvent, this);
+
+    float publish_path_every_n_sec = 5.0;
+    if (publish_path_every_n_sec > 0) {
+      node_handle_.param(
+          "publish_path_every_n_sec", publish_path_every_n_sec,
+          publish_path_every_n_sec);
+      optimize_publish_timer_ = node_handle_.createTimer(
+          ros::Duration(publish_path_every_n_sec),
+          &OnlineMapServer::optimizeAndPublishEvent, this);
+
+      for (int i = 0; i < client_number; i++) {
+        path_pub_.emplace_back(
+            node_handle_.advertise<nav_msgs::Path>("multi_agent_path", 10));
+      }
+    }
 
     map_manipulation_.reset(new vi_map_helpers::VIMapManipulation(map_.get()));
 
@@ -87,17 +109,40 @@ class OnlineMapServer {
 
  private:
   void anchorMissionEvent(const ros::TimerEvent& /*event*/);
-  void optimizeEvent(const ros::TimerEvent& /*event*/) {
+  void optimizeAndPublishEvent(const ros::TimerEvent& /*event*/) {
     optimizeMap();
   }
   void optimizeMap() {
-    vi_map::MissionIdList missions_with_loop;
-    for (auto const& mission_kv : new_loop_added_)
-      if (mission_kv.second)
-        missions_with_loop.emplace_back(mission_kv.first);
-    if (optimization_->keyframingAndOptimizeMap(missions_with_loop)) {
-      for (auto& mission_id : missions_with_loop)
-        new_loop_added_[mission_id] = false;
+    vi_map::MissionIdList missions_ids_known_T_G_M;
+    for (auto const& mission_id : mission_ids_)
+      if (map_->getMissionBaseFrameForMission(mission_id).is_T_G_M_known())
+        missions_ids_known_T_G_M.emplace_back(mission_id);
+
+    // if (missions_ids_known_T_G_M.size() > 1)
+    //   optimization_->keyframingAndOptimizeMap(missions_ids_known_T_G_M);
+  }
+  void publishPath() {
+    for (auto const& mission_id : mission_ids_) {
+      if (map_->getMissionBaseFrameForMission(mission_id).is_T_G_M_known()) {
+        nav_msgs::Path path_msg;
+        path_msg.header.stamp = ros::Time::now();
+        path_msg.header.frame_id = "world";
+        auto const& root_vertex_id =
+            map_->getMission(mission_id).getRootVertexId();
+        pose_graph::VertexIdList vertices;
+        map_->getAllVertexIdsInMissionAlongGraph(
+            mission_id, root_vertex_id, &vertices);
+        for (auto const& vertex_id : vertices) {
+          auto const& vertex = map_->getVertex(vertex_id);
+          geometry_msgs::PoseStamped pose_stamped;
+          pose_stamped.header.frame_id = "world";
+          ros::Time stamp;
+          stamp.fromNSec(vertex.getVisualFrame(0).getTimestampNanoseconds());
+          pose_stamped.header.stamp = stamp;
+          tf::poseKindrToMsg(vertex.get_T_M_I(), &pose_stamped.pose);
+          path_msg.poses.emplace_back(pose_stamped);
+        }
+      }
     }
   }
 
@@ -109,6 +154,8 @@ class OnlineMapServer {
 
   ros::NodeHandle node_handle_;
   ros::Timer anchor_mission_timer_;
+  ros::Timer optimize_publish_timer_;
+  std::vector<ros::Publisher> path_pub_;
 
   std::vector<ros::Subscriber> vio_update_subscriber_;
 
@@ -117,7 +164,6 @@ class OnlineMapServer {
   std::vector<vi_map::MissionId> mission_ids_;
   std::map<vi_map::MissionId, int> mid_cid_map_;
   std::map<vi_map::MissionId, pose_graph::VertexId> last_processed_vertex_id_;
-  std::map<vi_map::MissionId, bool> new_loop_added_;
   loop_detector_node::LoopDetectorNode loop_detector_;
 
   aslam::NCamera::Ptr ncamera_;

@@ -60,7 +60,7 @@ tf_imu_refined_frame: imu_refined
 # DEBUGGING AND LOGGING
 alsologtostderr: true
 colorlogtostderr: true
-v: 1
+v: 0
 publish_debug_markers: false
 vis_default_namespace: maplab_rviz
 export_estimated_poses_to_csv: ""

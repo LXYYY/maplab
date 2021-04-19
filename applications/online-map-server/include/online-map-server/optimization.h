@@ -35,12 +35,15 @@ class Optimization {
   bool relaxPoseGraph(const vi_map::MissionIdList& mission_ids) {
     map_optimization::VIMapRelaxation relaxation(nullptr, true);
 
-    ceres::Solver::Options solver_options =
-        map_optimization::initSolverOptionsFromFlags();
+    //  ceres::Solver::Options solver_options =
+    //      map_optimization::initSolverOptionsFromFlags();
 
-    vi_map::MissionIdSet mission_id_set(mission_ids.begin(), mission_ids.end());
-    return relaxation.solveRelaxation(
-        solver_options, mission_id_set, map_.get());
+    //  vi_map::MissionIdSet mission_id_set(mission_ids.begin(),
+    //  mission_ids.end()); return relaxation.solveRelaxation(
+    //      solver_options, mission_id_set, map_.get());
+    //
+    return relaxation.findLoopClosuresAndSolveRelaxation(
+        mission_ids, map_.get());
   }
 
   bool keyframingMap(const vi_map::MissionIdList& mission_ids) {

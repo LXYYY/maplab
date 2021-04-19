@@ -10,6 +10,8 @@ void OnlineMapServer::processMap(const vi_map::MissionId& mission_id) {
   initializeLandMarks(mission_id);
   anchorMission(mission_id, nullptr);
 
+  optimizeMap();
+
   last_processed_vertex_id_[mission_id] =
       map_->getLastVertexIdOfMission(mission_id);
 }
@@ -28,14 +30,13 @@ void OnlineMapServer::anchorMissionEvent(const ros::TimerEvent& /*event*/) {
     processMap(mission_ids_[i]);
     map_updated_[i] = false;
   }
-
-  // optimizeMap();
 }
 
 void OnlineMapServer::anchorMission(
     const vi_map::MissionId& mission_id,
     const visualization::ViwlsGraphRvizPlotter* /*plotter*/) {
-  if (mission_id != mission_ids_[0]) {
+  if (mission_id != mission_ids_[0] &&
+      !map_->getMissionBaseFrameForMission(mission_id).is_T_G_M_known()) {
     map_anchoring::anchorMission(mission_id, map_.get());
   }
 }
