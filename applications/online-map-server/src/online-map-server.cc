@@ -1,20 +1,24 @@
 #include "online-map-server/online-map-server.h"
 
 #include <landmark-triangulation/landmark-triangulation.h>
+#include <map-sparsification-plugin/keyframe-pruning.h>
 
 namespace online_map_server {
-void OnlineMapServer::processMap(const vi_map::MissionId mission_id) {
+void OnlineMapServer::processMap(const vi_map::MissionId& mission_id) {
   CHECK(last_processed_vertex_id_.count(mission_id));
 
-  map_manipulation_->initializeLandmarksFromUnusedFeatureTracksOfMission(
-      mission_id, last_processed_vertex_id_[mission_id]);
-  landmark_triangulation::retriangulateLandmarksAlongMissionAfterVertex(
-      mission_id, last_processed_vertex_id_[mission_id], map_.get());
-
+  initializeLandMarks(mission_id);
   anchorMission(mission_id, nullptr);
 
   last_processed_vertex_id_[mission_id] =
       map_->getLastVertexIdOfMission(mission_id);
+}
+
+void OnlineMapServer::initializeLandMarks(const vi_map::MissionId& mission_id) {
+  map_manipulation_->initializeLandmarksFromUnusedFeatureTracksOfMission(
+      mission_id, last_processed_vertex_id_[mission_id]);
+  landmark_triangulation::retriangulateLandmarksAlongMissionAfterVertex(
+      mission_id, last_processed_vertex_id_[mission_id], map_.get());
 }
 
 void OnlineMapServer::anchorMissionEvent(const ros::TimerEvent& /*event*/) {
@@ -24,6 +28,8 @@ void OnlineMapServer::anchorMissionEvent(const ros::TimerEvent& /*event*/) {
     processMap(mission_ids_[i]);
     map_updated_[i] = false;
   }
+
+  // optimizeMap();
 }
 
 void OnlineMapServer::anchorMission(

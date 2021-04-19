@@ -16,6 +16,8 @@
 #include <vio-common/map-update.h>
 #include <vio-common/vio-update-serialization.h>
 
+#include "online-map-server/optimization.h"
+
 namespace online_map_server {
 class OnlineMapServer {
  public:
@@ -42,6 +44,7 @@ class OnlineMapServer {
               }));
       auto const& mission_id = keyframed_map_builder_[i]->getMissionId();
       mission_ids_.emplace_back(mission_id);
+      mid_cid_map_.emplace(mission_id, i);
       map_updated_.emplace_back(false);
     }
 
@@ -53,6 +56,8 @@ class OnlineMapServer {
         ros::Duration(1), &OnlineMapServer::anchorMissionEvent, this);
 
     map_manipulation_.reset(new vi_map_helpers::VIMapManipulation(map_.get()));
+
+    optimization_.reset(new Optimization(map_));
   }
 
   virtual ~OnlineMapServer() = default;
@@ -80,10 +85,24 @@ class OnlineMapServer {
     }
   }
 
-  void processMap(const vi_map::MissionId mission_id);
-
  private:
   void anchorMissionEvent(const ros::TimerEvent& /*event*/);
+  void optimizeEvent(const ros::TimerEvent& /*event*/) {
+    optimizeMap();
+  }
+  void optimizeMap() {
+    vi_map::MissionIdList missions_with_loop;
+    for (auto const& mission_kv : new_loop_added_)
+      if (mission_kv.second)
+        missions_with_loop.emplace_back(mission_kv.first);
+    if (optimization_->keyframingAndOptimizeMap(missions_with_loop)) {
+      for (auto& mission_id : missions_with_loop)
+        new_loop_added_[mission_id] = false;
+    }
+  }
+
+  void processMap(const vi_map::MissionId& mission_id);
+  void initializeLandMarks(const vi_map::MissionId& mission_id);
   void anchorMission(
       const vi_map::MissionId& mission_id,
       const visualization::ViwlsGraphRvizPlotter* plotter);
@@ -96,7 +115,10 @@ class OnlineMapServer {
   std::vector<std::shared_ptr<online_map_builders::StreamMapBuilder>>
       keyframed_map_builder_;
   std::vector<vi_map::MissionId> mission_ids_;
+  std::map<vi_map::MissionId, int> mid_cid_map_;
   std::map<vi_map::MissionId, pose_graph::VertexId> last_processed_vertex_id_;
+  std::map<vi_map::MissionId, bool> new_loop_added_;
+  loop_detector_node::LoopDetectorNode loop_detector_;
 
   aslam::NCamera::Ptr ncamera_;
 
@@ -104,6 +126,8 @@ class OnlineMapServer {
   std::shared_ptr<vi_map_helpers::VIMapManipulation> map_manipulation_;
   std::vector<bool> map_updated_;
   std::mutex map_mutex_;
+
+  Optimization::Ptr optimization_;
 };
 }  // namespace online_map_server
 
