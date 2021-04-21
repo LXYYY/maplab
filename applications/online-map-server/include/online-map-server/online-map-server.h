@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <minkindr_conversions/kindr_msg.h>
+#include <minkindr_conversions/kindr_tf.h>
 #include <mutex>
 #include <nav_msgs/Path.h>
 #include <online-map-builders/keyframed-map-builder.h>
@@ -13,6 +14,7 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <string>
+#include <tf/transform_broadcaster.h>
 #include <vector>
 #include <vi-map/sensor-utils.h>
 #include <vio-common/map-update.h>
@@ -118,9 +120,11 @@ class OnlineMapServer {
       if (map_->getMissionBaseFrameForMission(mission_id).is_T_G_M_known())
         missions_ids_known_T_G_M.emplace_back(mission_id);
 
-    // if (missions_ids_known_T_G_M.size() > 1)
-    //   optimization_->keyframingAndOptimizeMap(missions_ids_known_T_G_M);
+    // TODO(mikexyl): for some reason, relaxation can't find loop closure
+    if (missions_ids_known_T_G_M.size() > 1)
+      optimization_->keyframingAndOptimizeMap(missions_ids_known_T_G_M);
   }
+
   void publishPath() {
     for (auto const& mission_id : mission_ids_) {
       if (map_->getMissionBaseFrameForMission(mission_id).is_T_G_M_known()) {
@@ -146,6 +150,18 @@ class OnlineMapServer {
     }
   }
 
+  void publishTfBetweenMission() {
+    for (auto const& mission_id : mission_ids_) {
+      auto const& T_G_M =
+          map_->getMissionBaseFrameForMission(mission_id).get_T_G_M();
+      tf::Transform T_G_M_tf;
+      tf::transformKindrToTF(T_G_M, &T_G_M_tf);
+      tf_br_.sendTransform(tf::StampedTransform(
+          T_G_M_tf, ros::Time::now(), "world",
+          std::to_string(mid_cid_map_[mission_id])));
+    }
+  }
+
   void processMap(const vi_map::MissionId& mission_id);
   void initializeLandMarks(const vi_map::MissionId& mission_id);
   void anchorMission(
@@ -156,6 +172,7 @@ class OnlineMapServer {
   ros::Timer anchor_mission_timer_;
   ros::Timer optimize_publish_timer_;
   std::vector<ros::Publisher> path_pub_;
+  tf::TransformBroadcaster tf_br_;
 
   std::vector<ros::Subscriber> vio_update_subscriber_;
 
