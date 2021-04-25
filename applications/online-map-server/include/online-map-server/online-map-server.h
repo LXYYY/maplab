@@ -19,6 +19,7 @@
 #include <vi-map/sensor-utils.h>
 #include <vio-common/map-update.h>
 #include <vio-common/vio-update-serialization.h>
+#include <voxblox/utils/timing.h>
 
 #include "online-map-server/optimization.h"
 
@@ -50,6 +51,7 @@ class OnlineMapServer {
       mission_ids_.emplace_back(mission_id);
       mid_cid_map_.emplace(mission_id, i);
       map_updated_.emplace_back(false);
+      mission_num_lc_links_.emplace(mission_id, 0);
     }
 
     map_anchoring::setMissionBaseframeKnownState(
@@ -69,13 +71,13 @@ class OnlineMapServer {
       node_handle_.param(
           "publish_path_every_n_sec", publish_path_every_n_sec,
           publish_path_every_n_sec);
-      optimize_publish_timer_ = node_handle_.createTimer(
-          ros::Duration(publish_path_every_n_sec),
-          &OnlineMapServer::optimizeAndPublishEvent, this);
+      //  optimize_publish_timer_ = node_handle_.createTimer(
+      //      ros::Duration(publish_path_every_n_sec),
+      //      &OnlineMapServer::optimizeAndPublishEvent, this);
 
       for (int i = 0; i < client_number; i++) {
-        path_pub_.emplace_back(
-            node_handle_.advertise<nav_msgs::Path>("multi_agent_path", 10));
+        path_pub_.emplace_back(node_handle_.advertise<nav_msgs::Path>(
+            "agent_path_" + std::to_string(i), 10));
       }
     }
 
@@ -90,10 +92,12 @@ class OnlineMapServer {
       int cid, const std_msgs::String::ConstPtr& vio_update_msg) {
     CHECK_NOTNULL(keyframed_map_builder_[cid]);
     vio::proto::VioUpdate vio_update_proto;
+    voxblox::timing::Timer timer("string_parsing");
     vio_update_proto.ParseFromString(vio_update_msg->data);
     vio::VioUpdate vio_update;
     vio::serialization::deserializeVioUpdate(
         vio_update_proto, ncamera_, &vio_update);
+    timer.Stop();
     {
       std::lock_guard<std::mutex> lock(map_mutex_);
       keyframed_map_builder_[cid]->apply(
@@ -122,15 +126,17 @@ class OnlineMapServer {
 
     // TODO(mikexyl): for some reason, relaxation can't find loop closure
     if (missions_ids_known_T_G_M.size() > 1)
-      optimization_->keyframingAndOptimizeMap(missions_ids_known_T_G_M);
+      // optimization_->keyframingAndOptimizeMap(missions_ids_known_T_G_M);
+      optimization_->relaxPoseGraph(mission_ids_);
   }
 
   void publishPath() {
-    for (auto const& mission_id : mission_ids_) {
+    for (size_t cid = 0; cid < mission_ids_.size(); cid++) {
+      auto const& mission_id = mission_ids_[cid];
       if (map_->getMissionBaseFrameForMission(mission_id).is_T_G_M_known()) {
         nav_msgs::Path path_msg;
         path_msg.header.stamp = ros::Time::now();
-        path_msg.header.frame_id = "world";
+        path_msg.header.frame_id = "map_" + std::to_string(cid);
         auto const& root_vertex_id =
             map_->getMission(mission_id).getRootVertexId();
         pose_graph::VertexIdList vertices;
@@ -139,13 +145,14 @@ class OnlineMapServer {
         for (auto const& vertex_id : vertices) {
           auto const& vertex = map_->getVertex(vertex_id);
           geometry_msgs::PoseStamped pose_stamped;
-          pose_stamped.header.frame_id = "world";
+          pose_stamped.header.frame_id = "map_" + std::to_string(cid);
           ros::Time stamp;
           stamp.fromNSec(vertex.getVisualFrame(0).getTimestampNanoseconds());
           pose_stamped.header.stamp = stamp;
           tf::poseKindrToMsg(vertex.get_T_M_I(), &pose_stamped.pose);
           path_msg.poses.emplace_back(pose_stamped);
         }
+        path_pub_[cid].publish(path_msg);
       }
     }
   }
@@ -180,6 +187,7 @@ class OnlineMapServer {
       keyframed_map_builder_;
   std::vector<vi_map::MissionId> mission_ids_;
   std::map<vi_map::MissionId, int> mid_cid_map_;
+  std::map<vi_map::MissionId, int> mission_num_lc_links_;
   std::map<vi_map::MissionId, pose_graph::VertexId> last_processed_vertex_id_;
   loop_detector_node::LoopDetectorNode loop_detector_;
 

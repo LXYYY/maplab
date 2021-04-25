@@ -2,6 +2,7 @@
 #define ONLINE_MAP_SERVER_OPTIMIZATION_H_
 
 #include <map-optimization/solver-options.h>
+#include <map-optimization/vi-map-optimizer.h>
 #include <map-optimization/vi-map-relaxation.h>
 #include <map-sparsification/keyframe-pruning.h>
 #include <map>
@@ -15,15 +16,11 @@ class Optimization {
   virtual ~Optimization() = default;
 
   bool keyframingAndOptimizeMap(const vi_map::MissionIdList& mission_ids) {
-    if (relaxPoseGraph(mission_ids)) {
-      if (true /*keyframingMap(mission_ids)*/)  // not keyfrming. I think maybe
-                                                // need to find loop closure
-                                                // again after keyframing, which
-                                                // costs some time
-        return true; /*optimizeMap();*/  // not optimize, because relaxation
-                                         // optimized the pose graph and
-                                         // generated a globally consistent map,
-                                         // maybe good enough to use
+    if (1 /*relaxPoseGraph(mission_ids)*/) {
+      if (1 /*keyframingMap(mission_ids)*/)  //! if keyframing map, need to
+                                             //! merge landmarks instead of
+                                             //! adding lc edges
+        return optimizeMap(mission_ids);
       else
         return false;
     } else {
@@ -31,21 +28,18 @@ class Optimization {
     }
   }
 
- private:
   bool relaxPoseGraph(const vi_map::MissionIdList& mission_ids) {
     map_optimization::VIMapRelaxation relaxation(nullptr, true);
 
-    //  ceres::Solver::Options solver_options =
-    //      map_optimization::initSolverOptionsFromFlags();
+    ceres::Solver::Options solver_options =
+        map_optimization::initSolverOptionsFromFlags();
 
-    //  vi_map::MissionIdSet mission_id_set(mission_ids.begin(),
-    //  mission_ids.end()); return relaxation.solveRelaxation(
-    //      solver_options, mission_id_set, map_.get());
-    //
-    return relaxation.findLoopClosuresAndSolveRelaxation(
-        mission_ids, map_.get());
+    vi_map::MissionIdSet mission_id_set(mission_ids.begin(), mission_ids.end());
+    return relaxation.solveRelaxation(
+        solver_options, mission_id_set, map_.get());
   }
 
+ private:
   bool keyframingMap(const vi_map::MissionIdList& mission_ids) {
     for (auto const& mission_id : mission_ids) {
       const size_t num_initial_vertices =
@@ -87,8 +81,13 @@ class Optimization {
     return true;
   }
 
-  bool optimizeMap() {
-    return true;
+  bool optimizeMap(const vi_map::MissionIdList& mission_ids) {
+    map_optimization::VIMapOptimizer optimizer(nullptr, false);
+    vi_map::MissionIdSet missions_to_optimize(
+        mission_ids.begin(), mission_ids.end());
+    map_optimization::ViProblemOptions options =
+        map_optimization::ViProblemOptions::initFromGFlags();
+    return optimizer.optimize(options, missions_to_optimize, map_.get());
   }
 
   vi_map::VIMap::Ptr map_;
