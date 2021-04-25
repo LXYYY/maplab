@@ -51,7 +51,7 @@
                 <remap from="~vio_update_0" to="/rovioli_0/vio_update" />
                 <remap from="~vio_update_1" to="/rovioli_1/vio_update" />
 
-                <rosparam command="load" file="$(find maplab_launch)/config/euroc/ros/euroc-maplab-node-rosparam.yaml" />
+                <rosparam command="load" file="$(find maplab_launch)/config/euroc-multi/ros/euroc-maplab-node-rosparam.yaml" />
 
                 <param name="sensor_calibration_file" value="$(find maplab_launch)/config/euroc/calib/euroc-mono.yaml" />
                 <param name="imu_to_camera_time_offset_ns" value="0" />
@@ -64,6 +64,7 @@
                 <param name="kf_every_nth_vertex" value="3" />
                 <param name="kf_min_shared_landmarks_obs" value="10" />
                 <param name="client_number" value="2" />
+                <param name="publish_path_every_n_sec" value="0" />
         </node>
 
         <node name="player_0" pkg="rosbag" type="play" output="screen" args="$(arg bag_file0) -q /cam0/image_raw:=/cam0_0/image_raw /imu0:=/imu0_0" />

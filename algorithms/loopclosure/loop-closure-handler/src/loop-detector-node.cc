@@ -297,8 +297,6 @@ void LoopDetectorNode::addVertexToDatabase(
           vertex.getVisualFrame(frame_idx), landmark_ids, vertex.getMissionId(),
           kSkipInvalidLandmarkIds, projected_image.get());
 
-      VLOG(200) << "projected descriptors: "
-                << projected_image->projected_descriptors.cols();
       loop_detector_->Insert(projected_image);
     }
   }
